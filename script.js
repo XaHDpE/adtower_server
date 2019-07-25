@@ -14,7 +14,7 @@
 
 var firebase = require('firebase');
 var firebaseui = require('firebaseui');
-var config = require('./config.js');
+var config = require('./config/applicationConfig.js');
 var $ = require('jquery');
 
 /**

@@ -108,7 +108,7 @@ function checkIfSignedIn(url) {
 
 // Initialize Admin SDK.
 admin.initializeApp({
-    credential: admin.credential.cert('serviceAccountKeys.json'),
+    credential: admin.credential.cert('./config/serviceAccountKeys.json'),
     databaseURL: 'https://adtower-server.firebaseio.com',
     storageBucket: "gs://adtower-server.appspot.com"
 });
