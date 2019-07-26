@@ -1,26 +1,32 @@
 {
-  "name": "firebase-admin-session-mgmt",
+  "name": "adtower-server",
   "version": "1.0.0",
-  "description": "Session Management with Firebase Admin SDK Quickstart Sample",
+  "description": "Server part of the ADTower application",
   "main": "app.js",
   "scripts": {
+    "lint": "eslint",
     "test": "echo \"Error: no test specified\" && exit 1",
     "demo": "./node_modules/.bin/webpack --config webpack.config.js && node app.js"
   },
-  "author": "bojeil-google",
+  "author": "xahdpe",
   "license": "Apache License Version 2.0",
   "dependencies": {
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.4",
     "express": "^4.17.1",
     "firebase": "^4.13.1",
-    "firebase-admin": "^5.13.1",
+    "firebase-admin": "^8.3.0",
+    "firebase-functions": "^3.2.0",
     "firebaseui": "^2.7.0",
     "jquery": "^3.4.1",
     "jsdom": "^15.1.1",
     "multer": "^1.4.2",
     "pug": "^2.0.4",
-    "webpack": "^4.37.0",
+    "webpack": "^4.38.0",
     "webpack-cli": "^3.3.6"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-google": "^0.13.0"
   }
 }
