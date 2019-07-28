@@ -37,8 +37,10 @@ const uploadFile = (userData, file) => {
 
     const blobStream = fileUpload.createWriteStream({
       metadata: {
-        'contentType': file.mimetype,
-        'sourceFileName': file.originalname,
+        contentType: file.mimetype,
+        metadata: {
+          uploadedBy: userData.uid,
+        },
       },
     });
 
@@ -128,11 +130,13 @@ app.get('/profile', (req, res) => {
       .then( (decodedClaims) => {
         // Serve content for signed in user.
         admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
-          services.getFilesByUserUid(userRecord.uid)
+          services.getDbFilesDataByUserUid(userRecord.uid)
               .then( (data)=> {
+                console.log('data:' + data);
+                // services.getDbFilesDataByUserUid(userRecord.uid);
                 return res.render('profile', {
                   user: userRecord,
-                  files: data[0],
+                  files: data,
                 });
               });
         });
@@ -145,9 +149,9 @@ app.get('/profile', (req, res) => {
 app.post('/upload', multer.single('file'), (req, res) => {
   const sessionCookie = req.cookies.session || '';
   admin.auth().verifySessionCookie(sessionCookie, true /** check if revoked. */)
-      .then(function(decodedClaims) {
+      .then((decodedClaims) => {
         // Serve content for signed in user.
-        admin.auth().getUser(decodedClaims.sub).then(function(userRecord) {
+        admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
           const file = req.file;
           if (file) {
             uploadFile(userRecord, file).then((success) => {

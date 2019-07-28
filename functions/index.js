@@ -16,6 +16,7 @@ const THUMB_MAX_HEIGHT = 320;
 const THUMB_MAX_WIDTH = 240;
 // Thumbnail prefix added to file names.
 const THUMB_PREFIX = 'thumb_';
+const THUMB_EXT = '.png';
 
 admin.initializeApp();
 
@@ -33,16 +34,14 @@ function promisifyCommand(command) {
 
 exports.generateThumbnail = functions.storage.object().onFinalize(async (object) => {
   // File and directory paths.
+  const uploadedBy = object.metadata['uploadedBy'];
   const filePath = object.name;
-  const contentType = object.contentType; // This is the image MIME type
   const fileDir = path.dirname(filePath);
   const fileName = path.basename(filePath);
-  const thumbFilePath = path.normalize(path.join(fileDir, `${THUMB_PREFIX}${fileName}`));
+  const thumbFilePath = path.normalize(path.join(fileDir, `${THUMB_PREFIX}${fileName}${THUMB_EXT}`));
   const tempLocalFile = path.join(os.tmpdir(), filePath);
   const tempLocalDir = path.dirname(tempLocalFile);
   const tempLocalThumbFile = path.join(os.tmpdir(), thumbFilePath);
-
-
 
   // Exit if this is triggered on a file that is not an image.
   /*
@@ -61,7 +60,7 @@ exports.generateThumbnail = functions.storage.object().onFinalize(async (object)
   const file = bucket.file(filePath);
   const thumbFile = bucket.file(thumbFilePath);
   const metadata = {
-    contentType: contentType,
+    contentType: 'image/png',
     // To enable Client-side caching you can set the Cache-Control headers here. Uncomment below.
     // 'Cache-Control': 'public,max-age=3600',
   };
@@ -81,14 +80,8 @@ exports.generateThumbnail = functions.storage.object().onFinalize(async (object)
       console.log(`will generate ${filenames.join(', ')} in the ${tempLocalDir} folder`)
     })
     .setFfmpegPath(ffmpeg_static.path)
-    .screenshot({
-        timestamps: ['50%'],
-        folder: tempLocalDir,
-        filename: `${fileName}.png`,
-        size: `${THUMB_MAX_WIDTH}x${THUMB_MAX_HEIGHT}`
-      })
-      .output(`${fileName}.png`)
-    ;
+    .outputOptions(['-f image2', '-vframes 1', '-vcodec png', '-f rawvideo', '-s 320x240', '-ss 00:00:05'])
+    .output(tempLocalThumbFile);
 
   await promisifyCommand(command);
 
@@ -112,7 +105,7 @@ exports.generateThumbnail = functions.storage.object().onFinalize(async (object)
   const thumbFileUrl = thumbResult[0];
   const fileUrl = originalResult[0];
   // Add the URLs to the Database
-  await admin.database().ref('images').push({path: fileUrl, thumbnail: thumbFileUrl});
+  await admin.database().ref(`videos/${uploadedBy}`).push({path: fileUrl, thumbnail: thumbFileUrl});
   return console.log('Thumbnail URLs saved to database.');
 
 });

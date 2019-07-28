@@ -3,10 +3,10 @@ html
     include head
         title Sample Profile Page
     body
-        #container
+        .container
             h3 Welcome to Session Management Example App, #{user.displayName}
-            #loaded
-                #main
+            .row
+                .col-lg-12.text-center
                     #user-signed-in
                         #user-info
                             #photo-container
@@ -18,8 +18,15 @@ html
                             button#sign-out(onclick="window.location.assign('/logout')") Sign Out
                             button#delete-account(onclick="window.location.assign('/delete')") Delete account
                             .clearfix
-                        ul#sortable
-                            for file in files
-                                li(class='ui-state-default')= file.name
+                        p Active Playlist
+                        ul#active_pl(class='droptrue')
                             .clearfix
+                        p Available videos
+                        .container
+                            #simpleList.card-group.card-group-scroll
+                                for file in files
+                                    .card
+                                        img.card-img-top(src=file.tnpath)
+                                        .card-body
+                                            h5.card-title Text
                         form#mydropzone(action='/upload', class='dropzone')
