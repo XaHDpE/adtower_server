@@ -18,15 +18,21 @@ html
                             button#sign-out(onclick="window.location.assign('/logout')") Sign Out
                             button#delete-account(onclick="window.location.assign('/delete')") Delete account
                             .clearfix
-                        p Active Playlist
-                        ul#active_pl(class='droptrue')
-                            .clearfix
-                        p Available videos
+                        h3 Active Playlist
                         .container
-                            #simpleList.card-group.card-group-scroll
+                            #activeVidsList.card-group.card-group-scroll
+                            .clearfix
+                        h3 Available videos
+                        .container-fluid
+                            #avaialableVidsList.card-group.card-group-scroll
                                 for file in files
                                     .card
                                         img.card-img-top(src=file.tnpath)
                                         .card-body
                                             h5.card-title Text
+                        .container
+                            ul.list-inline#testList
+                                for file in files
+                                    li#.list-inline-item
+                                        img(src=file.tnpath)
                         form#mydropzone(action='/upload', class='dropzone')

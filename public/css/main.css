@@ -5,6 +5,7 @@
     }
 
     .card-group.card-group-scroll > .card {
-        flex-basis: 35%;
+        flex-basis: 40%;
     }
+
 }

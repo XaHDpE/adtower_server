@@ -16,13 +16,44 @@ $( ()=> {
   $('#sortable, #active_pl').disableSelection();
 });
 */
-$( () => {
-    Sortable.create(simpleList,
-      {
-        dataIdAttr: 'data-id',
-      });
-  },
+$(() => {
 
-)
+    Sortable.create(avaialableVidsList,
+      {
+        group: {
+          name: 'sortable_group',
+          pull: 'clone',
+        },
+        drop: false,
+        animation: 100,
+      });
+
+    Sortable.create(activeVidsList,
+      {
+        group: 'sortable_group',
+        dataIdAttr: 'data-id',
+        animation: 100,
+      });
+
+    Sortable.create(testList, {
+        group: 'sortable_group',
+        dataIdAttr: 'data-id',
+        animation: 100,
+        store: {
+          get: function(sortable) {
+            var order = localStorage.getItem(sortable.options.group.name);
+            return order ? order.split('|') : [];
+          },
+
+          set: function(sortable) {
+            var order = sortable.toArray();
+            console.log('order:' + order);
+            localStorage.setItem(sortable.options.group.name, order.join('|'));
+          },
+        }
+      });
+
+  },
+);
 // Simple list
 
