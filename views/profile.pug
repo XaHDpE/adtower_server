@@ -2,37 +2,54 @@ doctype html
 html
     include head
         title Sample Profile Page
-    body
-        .container
+    body.d-flex.flex-column.h-100
+        header
+            nav.navbar.navbar.navbar-expand-md.navbar-dark.fixed-top.bg-dark
+                a.navbar-brand(href="#") AD Tower
+                button.navbar-toggler(data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation")
+                    span.navbar-toggler-icon
+                #navbarCollapse.collapse.navbar-collapse
+                    ul.navbar-nav.mr-auto
+                        li.nav-item
+                            a.nav-link
+                        li.nav-item
+                            a.nav-link(href="/logout") Sign-Out
+                    form.form-inline.mt-2.mt-md-0
+                        input.form-control.mr-sm-2(type="text" placeholder="Search" aria-label="Search")
+                        button.btn.btn-outline-success.my-2.my-sm-0(type="Submit") Search
+        main.flex-shrink-0(role="main")
+            .container
             h3 Welcome to Session Management Example App, #{user.displayName}
-            .row
-                .col-lg-12.text-center
-                    #user-signed-in
-                        #user-info
-                            #photo-container
-                            #name #{user.displayName}
-                            #email #{user.email} #{user.emailVerified || '(Unverified)'}
-                            .clearfix
-                        p
-                            button#testAction Action
-                            button#sign-out(onclick="window.location.assign('/logout')") Sign Out
-                            button#delete-account(onclick="window.location.assign('/delete')") Delete account
-                            .clearfix
-                        h3 Active Playlist
-                        .container
-                            #activeVidsList.card-group.card-group-scroll
-                            .clearfix
-                        h3 Available videos
-                        .container-fluid
-                            #avaialableVidsList.card-group.card-group-scroll
-                                for file in files
-                                    .card
-                                        img.card-img-top(src=file.tnpath)
-                                        .card-body
-                                            h5.card-title Text
-                        .container
-                            ul.list-inline#testList
-                                for file in files
-                                    li#.list-inline-item
-                                        img(src=file.tnpath)
-                        form#mydropzone(action='/upload', class='dropzone')
+            #user-signed-in
+                #user-info
+                    #photo-container
+                    #name #{user.displayName}
+                    #email #{user.email} #{user.emailVerified || '(Unverified)'}
+                    .clearfix
+                p
+                    button#testAction Action
+                    button#sign-out(onclick="window.location.assign('/logout')") Sign Out
+                    button#delete-account(onclick="window.location.assign('/delete')") Delete account
+                    .clearfix
+                h3 Active Playlist
+                .container
+                    #activeVidsList.card-group.card-group-scroll
+                    .clearfix
+                h3 Available videos
+                .container
+                    #avaialableVidsList.card-group.card-group-scroll
+                        for file in files
+                            .card
+                                img.card-img-top(src=file.tnpath)
+                                .card-body
+                                    h5.card-title Text
+                .clearfix
+                    .btn-group.float-right(role="group", aria-label="Example")
+                        button.button.btn.btn-secondary Clear
+                        button.button.btn.btn-secondary Save
+                .container
+                    ul.list-inline#testList
+                        for file in files
+                            li.list-inline-item
+                                img(src=file.tnpath)
+                form#mydropzone(action='/upload', class='dropzone')
