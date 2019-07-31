@@ -123,7 +123,7 @@ app.use(checkIfSignedIn('/',));
 app.use('/', express.static('public'));
 
 /** Get profile endpoint. */
-app.get('/profile', (req, res) => {
+app.get('/videos', (req, res) => {
   // Get session cookie.
   const sessionCookie = req.cookies.session || '';
   admin.auth().verifySessionCookie(sessionCookie, true /** check if revoked. */)
@@ -132,9 +132,9 @@ app.get('/profile', (req, res) => {
         admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
           services.getDbFilesDataByUserUid(userRecord.uid)
               .then( (data)=> {
-                console.log('data:' + data);
                 // services.getDbFilesDataByUserUid(userRecord.uid);
                 return res.render('profile', {
+                  navKey: 'videos',
                   user: userRecord,
                   files: data,
                 });
