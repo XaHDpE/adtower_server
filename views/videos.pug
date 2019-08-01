@@ -1,23 +1,10 @@
 doctype html
 html
     include head
-        title Sample Profile Page
+        title= navKey
     body.d-flex.flex-column.h-100
         header
-            nav.navbar.navbar-expand-md.navbar-dark.fixed-top.bg-dark
-                a(href='#').navbar-brand
-                    i.fa.fa-home
-                button.navbar-toggler(data-toggle="collapse" data-target="#navbarSupportedContent")
-                    span.navbar-toggler-icon
-                .navbar-collapse.collapse.justify-content-stretch
-                    ul.navbar-nav
-                        each val, key in { 'home':'Home','videos':'My Videos' }
-                            li.nav-item
-                                a(class=(navKey === key ? 'nav-link active' : 'nav-link') href=key)= val
-                    ul.navbar-nav.ml-auto
-                        li.nav-item
-                            a.nav-link(href='/logout') Exit&nbsp;
-                                i.fa.fa-sign-out
+            include menu
         main.flex-shrink-0(role="main")
             .container
             h3 Welcome to Session Management Example App, #{user.displayName}
@@ -53,4 +40,5 @@ html
                         for file in files
                             li.list-inline-item
                                 img(src=file.tnpath)
-                form#mydropzone(action='/upload', class='dropzone')
+                // form#mydropzone(action='/upload', class='dropzone')
+include footer

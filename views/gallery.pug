@@ -1,0 +1,18 @@
+doctype html
+html
+    include head
+        title= navKey
+    body.d-flex.flex-column.h-100
+        header
+            include menu
+        main.container(role="main")
+            .row
+                .col-sm-2
+                    img.img-fluid.m-x-auto.d-block.img-responsive(src='https://unsplash.it/380/600?image=1')
+                .col-sm-2
+                    img.img-fluid.m-x-auto.d-block.img-responsive(src='https://unsplash.it/380/600?image=2')
+                .col-sm-2
+                    img.img-fluid.m-x-auto.d-block.img-responsive(src='https://unsplash.it/380/600?image=3')
+                .col-sm-2
+                    img.img-fluid.m-x-auto.d-block.img-responsive(src='https://unsplash.it/380/600?image=4')
+    include footer

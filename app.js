@@ -76,7 +76,7 @@ function attachCsrfToken(url, cookie, value) {
 }
 
 /**
- * Checks if a user is signed in and if so, redirects to profile page.
+ * Checks if a user is signed in and if so, redirects to My Videos page.
  * @param {string} url The URL to check if signed in.
  * @return {function} The middleware function to run.
  */
@@ -84,10 +84,10 @@ function checkIfSignedIn(url) {
   return function(req, res, next) {
     if (req.url == url) {
       const sessionCookie = req.cookies.session || '';
-      // User already logged in. Redirect to profile page.
+      // User already logged in. Redirect to Videos page.
       admin.auth().verifySessionCookie(sessionCookie)
           .then(function(decodedClaims) {
-            res.redirect('/profile');
+            res.redirect('/videos');
           }).catch(function(error) {
             next();
           });
@@ -117,12 +117,36 @@ app.use(
     attachCsrfToken('/', 'csrfToken',
         (Math.random() * 100000000000000000).toString())
 );
-// If a user is signed in, redirect to profile page.
+// If a user is signed in, redirect to videos page.
 app.use(checkIfSignedIn('/',));
 // Serve static content from public folder.
 app.use('/', express.static('public'));
 
-/** Get profile endpoint. */
+/** Get videos endpoint. */
+app.get('/gallery', (req, res) => {
+  // Get session cookie.
+  const sessionCookie = req.cookies.session || '';
+  admin.auth().verifySessionCookie(sessionCookie, true /** check if revoked. */)
+    .then( (decodedClaims) => {
+      // Serve content for signed in user.
+      admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
+        services.getDbFilesDataByUserUid(userRecord.uid)
+          .then( (data)=> {
+            // services.getDbFilesDataByUserUid(userRecord.uid);
+            return res.render('gallery', {
+              navKey: 'gallery',
+              user: userRecord,
+              files: data,
+            });
+          });
+      });
+    }).catch( (error) => {
+    res.redirect('/');
+  });
+});
+
+
+/** Get videos endpoint. */
 app.get('/videos', (req, res) => {
   // Get session cookie.
   const sessionCookie = req.cookies.session || '';
@@ -133,7 +157,7 @@ app.get('/videos', (req, res) => {
           services.getDbFilesDataByUserUid(userRecord.uid)
               .then( (data)=> {
                 // services.getDbFilesDataByUserUid(userRecord.uid);
-                return res.render('profile', {
+                return res.render('videos', {
                   navKey: 'videos',
                   user: userRecord,
                   files: data,

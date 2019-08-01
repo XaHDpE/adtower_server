@@ -50,7 +50,7 @@ function getUiConfig() {
 
 /**
  * Handles a signed in user. Sets the session cookie and then redirects to
- * profile page on success.
+ * main page on success.
  * @param {!firebase.User} user
  */
 const handleSignedInUser = function(user) {
@@ -64,7 +64,7 @@ const handleSignedInUser = function(user) {
     return postIdTokenToSessionLogin('/sessionLogin', idToken, csrfToken)
         .then(function() {
         // Redirect to profile on success.
-          window.location.assign('/profile');
+          window.location.assign('/videos');
         }, function(error) {
         // Refresh page on error.
         // In all cases, client side state should be lost due to in-memory
