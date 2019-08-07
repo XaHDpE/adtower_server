@@ -2,43 +2,34 @@ doctype html
 html
     include head
         title= navKey
-    body.d-flex.flex-column.h-100
-        header
-            include menu
-        main.flex-shrink-0(role="main")
-            .container
-            h3 Welcome to Session Management Example App, #{user.displayName}
-            #user-signed-in
-                #user-info
-                    #photo-container
-                    #name #{user.displayName}
-                    #email #{user.email} #{user.emailVerified || '(Unverified)'}
-                    .clearfix
-                p
-                    button#testAction Action
-                    button#sign-out(onclick="window.location.assign('/logout')") Sign Out
-                    button#delete-account(onclick="window.location.assign('/delete')") Delete account
-                    .clearfix
-                h3 Active Playlist
-                .container
+    body
+        main(role="main")
+            .container-fluid
+                #carouselExampleSlidesOnly.carousel.slide(data-ride="carousel")
+                    .carousel-inner
+                        for file in files
+                            .carousel-item
+                                img.d-block.w-100(src=file.tnpath)
+            //.container-fluid.flex-shrink-0
+                .row
+                    h3 Active Playlist
                     #activeVidsList.card-group.card-group-scroll
                     .clearfix
-                h3 Available videos
-                .container
-                    #avaialableVidsList.card-group.card-group-scroll
-                        for file in files
-                            .card
-                                img.card-img-top(src=file.tnpath)
-                                .card-body
-                                    h5.card-title Text
-                .clearfix
-                    .btn-group.float-right(role="group", aria-label="Example")
-                        button.button.btn.btn-secondary Clear
-                        button.button.btn.btn-secondary Save
-                .container
-                    ul.list-inline#testList
-                        for file in files
-                            li.list-inline-item
-                                img(src=file.tnpath)
-                // form#mydropzone(action='/upload', class='dropzone')
+                .row
+                    #avaialableVidsList.text-center.text-lg-left
+                    for file in files
+                        .col-lg-3.col-md-5.col-6.tn-av-out
+                            img.img-fluid.img-tn-av(src=file.tnpath)
+                            a.mid-tn-av-blk(href="#")
+                                .text.fa.fa-plus-circle
+            //.row
+                .btn-group.float-right(role="group", aria-label="Example")
+                    button.button.btn.btn-secondary Clear
+                    button.button.btn.btn-secondary Save
+            //.row
+                ul.list-inline#testList
+                    for file in files
+                        li.list-inline-item
+                            img(src=file.tnpath)
+            // form#mydropzone(action='/upload', class='dropzone')
 include footer
