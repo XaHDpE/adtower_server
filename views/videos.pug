@@ -2,34 +2,42 @@ doctype html
 html
     include head
         title= navKey
-    body
-        main(role="main")
-            .container-fluid
-                #carouselExampleSlidesOnly.carousel.slide(data-ride="carousel")
-                    .carousel-inner
-                        for file in files
-                            .carousel-item
-                                img.d-block.w-100(src=file.tnpath)
-            //.container-fluid.flex-shrink-0
-                .row
-                    h3 Active Playlist
-                    #activeVidsList.card-group.card-group-scroll
-                    .clearfix
-                .row
-                    #avaialableVidsList.text-center.text-lg-left
-                    for file in files
-                        .col-lg-3.col-md-5.col-6.tn-av-out
-                            img.img-fluid.img-tn-av(src=file.tnpath)
-                            a.mid-tn-av-blk(href="#")
-                                .text.fa.fa-plus-circle
-            //.row
-                .btn-group.float-right(role="group", aria-label="Example")
-                    button.button.btn.btn-secondary Clear
-                    button.button.btn.btn-secondary Save
-            //.row
-                ul.list-inline#testList
-                    for file in files
-                        li.list-inline-item
-                            img(src=file.tnpath)
-            // form#mydropzone(action='/upload', class='dropzone')
+body
+    header
+        include menu
+    main(role="main")
+        .container-fluid.sticky-top
+            .flex-row
+                .col.flex-nowrap.scrolling-wrapper
+                    each file, idx in files
+                        img.img-fluid(src=file.tnpath)
+            //#carousel-example.carousel.slide(data-ride="carousel", data-interval="false", data-wrap="false")
+                #activeVidsList.carousel-inner.row.w-100.mx-auto(role="listbox")
+                    each file, idx in files
+                        div(class="carousel-item col-12 col-sm-6 col-md-4 col-lg-3" + (idx == 0 ? " active" : ""))
+                            img.img-fluid.mx-auto.d-block(src=file.tnpath)
+                a.carousel-control-prev(href="#carousel-example", role="button", data-slide="prev")
+                    i.fas.fa-chevron-left.fas-lg.text-muted
+                    span.sr-only Prev
+                a.carousel-control-next(href="#carousel-example", role="button", data-slide="next")
+                    i.fas.fa-chevron-right.fas-lg.text-muted
+                    span.sr-only Next
+        .container-fluid
+            .flex-row
+                #avaialableVidsList.text-center.text-lg-left
+                for file in files
+                    .col-lg-3.col-md-5.col-6.tn-av-out
+                        img.img-fluid.img-tn-av(src=file.tnpath)
+                        a.mid-tn-av-blk(href="#")
+                            .text.fa.fa-plus-circle
+        //.row
+            .btn-group.float-right(role="group", aria-label="Example")
+                button.button.btn.btn-secondary Clear
+                button.button.btn.btn-secondary Save
+        //.row
+            ul.list-inline#testList
+                for file in files
+                    li.list-inline-item
+                        img(src=file.tnpath)
+        // form#mydropzone(action='/upload', class='dropzone')
 include footer
