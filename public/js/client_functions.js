@@ -1,9 +1,8 @@
+// const config = require('/config/applicationConfig.js');
 $(
   () => {
 
-
-    Sortable.create(avaialableVidsList,
-      {
+    Sortable.create(avaialableVidsList, {
         group: {
           name: 'sortable_group',
           pull: 'clone',
@@ -12,8 +11,7 @@ $(
         animation: 100,
       });
 
-    Sortable.create(activeVidsList,
-      {
+    Sortable.create(activeVidsList, {
         group: 'sortable_group',
         dataIdAttr: 'data-id',
         animation: 100,
@@ -65,4 +63,18 @@ $('#carousel-example').on('slide.bs.carousel', function (e) {
       }
     }
   }
+});
+
+$('.close-div').click(function(){
+  const pObj = $(this).parent();
+  const recId = pObj.attr('id');
+  console.log("parentID:" + recId);
+  $.ajax({
+    url: `delete_video?recordKey=${recId}`,
+    // data: {},
+    success: () => {
+      console.log("deleted record: " + recId);
+    }
+  });
+  pObj.remove();
 });

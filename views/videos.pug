@@ -1,10 +1,10 @@
 doctype html
 html
-    include head
+    include includes/head
         title= navKey
 body
     header
-        include menu
+        include includes/menu
     main(role="main")
         .container-fluid.sticky-top
             .flex-row
@@ -40,4 +40,4 @@ body
                     li.list-inline-item
                         img(src=file.tnpath)
         // form#mydropzone(action='/upload', class='dropzone')
-include footer
+include includes/footer

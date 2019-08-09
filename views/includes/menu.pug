@@ -5,7 +5,7 @@ nav.navbar.navbar-expand-md.navbar-dark.bg-dark
         span.navbar-toggler-icon
     #navbarSupportedContent.navbar-collapse.collapse.justify-content-stretch
         ul.navbar-nav
-            each val, key in { 'home':'Home', 'videos':'My Videos', 'gallery':'Gallery' }
+            each val, key in { 'home':'Home', 'videos':'My Videos', 'library':'Library' }
                 li.nav-item
                     a(class=(navKey === key ? 'nav-link active' : 'nav-link') href=key)= val
         ul.navbar-nav.ml-auto

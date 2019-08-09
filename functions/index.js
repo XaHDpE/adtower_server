@@ -14,7 +14,7 @@ const ffmpeg_static = require('ffmpeg-static');
 // Max height and width of the thumbnail in pixels.
 const THUMB_SIZE = '320x240';
 // Thumbnail prefix added to file names.
-const THUMB_PREFIX = 'thumb_';
+const THUMB_PREFIX = 'thumb';
 const THUMB_EXT = '.png';
 
 admin.initializeApp();
@@ -31,6 +31,15 @@ function promisifyCommand(command) {
  * once the thumbnail is generated, its URL is saved in the Firestore Realtime DB
  */
 
+/*
+exports.deleteFunction = functions.database.ref('/videos')
+  .onDelete((snapshot, context) => {
+    var del_id = snapshot.key;
+    console.log("deleted ID %s", del_id); // logs "deleted ID 1234", etc.
+    console.log(snapshot.val()); // logs the deleted data, no need for this
+    console.log(context); // logs the event context
+  });
+ */
 exports.generateThumbnail = functions.storage.object().onFinalize(async (object) => {
   // File and directory paths.
   const filePath = object.name;
@@ -49,7 +58,7 @@ exports.generateThumbnail = functions.storage.object().onFinalize(async (object)
   */
 
   // Exit if the image is already a thumbnail.
-  if (fileName.startsWith(THUMB_PREFIX)) {
+  if (fileName.endsWith(THUMB_EXT)) {
     return console.log('Already a Thumbnail.');
   }
 
@@ -102,8 +111,13 @@ exports.generateThumbnail = functions.storage.object().onFinalize(async (object)
   const originalResult = results[1];
   const thumbFileUrl = thumbResult[0];
   const fileUrl = originalResult[0];
+
   // Add the URLs to the Database
-  await admin.database().ref(`videos/${object.metadata['uploadedBy']}`).push({path: fileUrl, thumbnail: thumbFileUrl});
+
+  let newRef = admin.database().ref(`videos/${object.metadata['uploadedBy']}`);
+  await newRef.push({url_video: fileUrl, url_thumbnail: thumbFileUrl, path_video: filePath, path_thumbnail: thumbFilePath});
+  // await newRef.set({ id: newRef.key });
+
   return console.log('Thumbnail URLs saved to database.');
 
 });

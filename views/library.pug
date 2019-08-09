@@ -1,0 +1,21 @@
+doctype html
+html
+    include includes/head
+        title= navKey
+    body
+        header
+            include includes/menu
+        main(role="main")
+            .container-fluid
+                .row
+                    .col.my-2.mx-5
+                        h3 Available Videos
+                .row.text-center.text-lg-left
+                   each val, idx in files
+                        .col-lg-3.col-md-5.col-6.tn-av-out.my-3(id=val.pk)
+                            img.img-fluid.img-thumbnail.img-tn-av(src=val.urlThumbnail)
+                            a.mid-tn-av-blk.close-div
+                                .text.fas.fa-trash-alt
+                .row.fixed-bottom.bg-info
+                    form#mydropzone.w-100(action='/upload', class='dropzone')
+    include includes/footer

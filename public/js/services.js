@@ -1,4 +1,9 @@
+require('firebase/storage');
 const admin = require('firebase-admin');
+const firebase = require('firebase/app');
+const config = require('../../config/applicationConfig.js');
+
+firebase.initializeApp(config);
 
 module.exports = {
   getFilesByUserUid: (userUid) => {
@@ -12,14 +17,23 @@ module.exports = {
         .then((snapshot) => {
           snapshot.forEach((childSnapshot) => {
             let obj = {};
-            obj.path = childSnapshot.val().path;
-            obj.tnpath = childSnapshot.val().thumbnail;
+            obj.pk = childSnapshot.key;
+            obj.urlVideo = childSnapshot.val().url_video;
+            obj.pathVideo = childSnapshot.val().path_video;
+            obj.urlThumbnail = childSnapshot.val().url_thumbnail;
+            obj.pathThumbnail = childSnapshot.val().path_thumbnail;
+            console.log("obj:" + obj);
             result.push(obj);
           });
           return result;
         });
   },
 
-
+  getFilePath: (url) => {
+    console.log(url);
+    const res = firebase.storage().refFromURL(url);
+    console.log("url: " + url + ", res: " + res.name);
+    return res;
+  }
 
 };
