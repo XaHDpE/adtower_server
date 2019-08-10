@@ -4,7 +4,7 @@
 const functions = require('firebase-functions');
 const mkdirp = require('mkdirp-promise');
 const admin = require('firebase-admin');
-const spawn = require('child-process-promise').spawn;
+// const spawn = require('child-process-promise').spawn;
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -14,7 +14,7 @@ const ffmpeg_static = require('ffmpeg-static');
 // Max height and width of the thumbnail in pixels.
 const THUMB_SIZE = '320x240';
 // Thumbnail prefix added to file names.
-const THUMB_PREFIX = 'thumb';
+const THUMB_POSTFIX = '_thumb';
 const THUMB_EXT = '.png';
 
 admin.initializeApp();
@@ -26,12 +26,59 @@ function promisifyCommand(command) {
   });
 }
 
+/*Remove files when corresponding database record is deleted. */
+
+exports.sanitizeStorage = functions.database.ref('/videos/{userId}/{clipId}').onDelete(event => {
+
+  /*
+  console.log(event);
+  let videoId = event.data.path_thumbnail;
+  let userId = event.data.ref.parent.key;
+  const filesToDelete = [ event.data.path_thumbnail, event.data.path_video ];
+
+  if (typeof videoId === 'undefined' || typeof userId === 'undefined') {
+    console.error('Error while sanitize photo, user uid or photo uid are missing');
+    return;
+  }
+   */
+
+  console.log(event);
+  console.log(`${event.val().path_video}`);
+
+  const filePattern = path.parse(event.val().path_video).name;
+  const bucket = admin.storage().bucket();
+
+/*
+  let ref = admin.database().ref(event.val().path_video);
+  ref.remove()
+    .then(() => {
+      console.log("file is deleted");
+      return;
+    })
+    .catch( (error) => {
+      console.error(error);
+    })
+*/
+  console.log(`file pattern: ${filePattern}`);
+
+  bucket.deleteFiles({ prefix: filePattern } )
+    .then( () => {
+      return console.log(`files with prefix ${filePattern} are deleted.`);
+    })
+    .catch( (error) => {
+      console.log("error", error);
+    })
+
+  return console.log("function sanitizeStorage finished.");
+
+});
+
+
 /**
  * when video is uploaded in the storage bucket, the thumbnail is generated accordingly
  * once the thumbnail is generated, its URL is saved in the Firestore Realtime DB
- */
 
-/*
+
 exports.deleteFunction = functions.database.ref('/videos')
   .onDelete((snapshot, context) => {
     var del_id = snapshot.key;
@@ -40,12 +87,13 @@ exports.deleteFunction = functions.database.ref('/videos')
     console.log(context); // logs the event context
   });
  */
+
 exports.generateThumbnail = functions.storage.object().onFinalize(async (object) => {
   // File and directory paths.
   const filePath = object.name;
   const fileDir = path.dirname(filePath);
   const fileName = path.basename(filePath);
-  const thumbFilePath = path.normalize(path.join(fileDir, `${THUMB_PREFIX}${fileName}${THUMB_EXT}`));
+  const thumbFilePath = path.normalize(path.join(fileDir, path.parse(fileName).name + THUMB_POSTFIX + THUMB_EXT));
   const tempLocalFile = path.join(os.tmpdir(), filePath);
   const tempLocalDir = path.dirname(tempLocalFile);
   const tempLocalThumbFile = path.join(os.tmpdir(), thumbFilePath);
@@ -91,6 +139,8 @@ exports.generateThumbnail = functions.storage.object().onFinalize(async (object)
     .output(tempLocalThumbFile);
 
   await promisifyCommand(command);
+
+  console.log(`generated local file: ${tempLocalThumbFile.length}, ${tempLocalThumbFile}`);
 
   // Uploading the Thumbnail.
   await bucket.upload(tempLocalThumbFile, {destination: thumbFilePath, metadata: metadata});

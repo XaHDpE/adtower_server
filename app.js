@@ -3,7 +3,8 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
-const services = require('./public/js/services');
+const dbs = require('./public/js/db_services');
+const fss = require('./public/js/fs_services');
 
 // Initialize Admin SDK.
 admin.initializeApp({
@@ -12,10 +13,8 @@ admin.initializeApp({
   storageBucket: 'gs://adtower-server.appspot.com',
 });
 
-
-
 /** File upload */
-const {format} = require('util');
+// const {format} = require('util');
 const Multer = require('multer');
 const multer = new Multer({
   storage: Multer.memoryStorage(),
@@ -32,40 +31,6 @@ const {document} = (new JSDOM('')).window;
 global.document = document;
 const $ = jQuery = require('jquery')(window);
  */
-
-
-const uploadFile = (userData, file) => {
-  const bucket = admin.storage().bucket();
-  return new Promise((resolve, reject) => {
-    if (!file) {
-      Error('No file');
-    }
-
-    const newFileName = `${userData.uid}/${Date.now()}_${file.originalname}`;
-    const fileUpload = bucket.file(newFileName);
-
-    const blobStream = fileUpload.createWriteStream({
-      metadata: {
-        contentType: file.mimetype,
-        metadata: {
-          uploadedBy: userData.uid,
-        },
-      },
-    });
-
-    blobStream.on('error', (error) => {
-      Error('Something is wrong! Unable to upload at the moment.');
-    });
-
-    blobStream.on('finish', () => {
-      // The public URL can be used to directly access the file via HTTP.
-      const url = format(`https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`);
-      resolve(url);
-    });
-
-    blobStream.end(file.buffer);
-  });
-};
 
 
 /**
@@ -95,17 +60,16 @@ function checkIfSignedIn(url) {
       const sessionCookie = req.cookies.session || '';
       // User already logged in. Redirect to Videos page.
       admin.auth().verifySessionCookie(sessionCookie)
-        .then(function(decodedClaims) {
-          res.redirect('/videos');
-        }).catch(function(error) {
-        next();
-      });
+          .then(function(decodedClaims) {
+            res.redirect('/videos');
+          }).catch(function(error) {
+            next();
+          });
     } else {
       next();
     }
   };
 }
-
 
 
 // Support JSON-encoded bodies.
@@ -118,8 +82,8 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser());
 // Attach CSRF token on each request.
 app.use(
-  attachCsrfToken('/', 'csrfToken',
-    (Math.random() * 100000000000000000).toString()),
+    attachCsrfToken('/', 'csrfToken',
+        (Math.random() * 100000000000000000).toString()),
 );
 // If a user is signed in, redirect to videos page.
 app.use(checkIfSignedIn('/'));
@@ -131,37 +95,37 @@ app.get('/library', (req, res) => {
   // Get session cookie.
   const sessionCookie = req.cookies.session || '';
   admin.auth().verifySessionCookie(sessionCookie, true /** check if revoked. */)
-    .then((decodedClaims) => {
+      .then((decodedClaims) => {
       // Serve content for signed in user.
-      admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
-        services.getDbFilesDataByUserUid(userRecord.uid)
-          .then((data) => {
-            // services.getDbFilesDataByUserUid(userRecord.uid);
-            return res.render('library', {
-              navKey: 'library',
-              user: userRecord,
-              files: data,
-            });
-          });
+        admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
+          dbs.getDbFilesDataByUserUid(userRecord.uid)
+              .then((data) => {
+                // services.getDbFilesDataByUserUid(userRecord.uid);
+                return res.render('library', {
+                  navKey: 'library',
+                  user: userRecord,
+                  files: data,
+                });
+              });
+        });
+      }).catch((error) => {
+        res.redirect('/');
       });
-    }).catch((error) => {
-    res.redirect('/');
-  });
 });
 
 /** Get videos endpoint. */
 app.get('/videos', (req, res) => {
   // Get session cookie.
   checkUserClaims(req, res, (userRecord) => {
-    services.getDbFilesDataByUserUid(userRecord.uid)
-      .then((data) => {
+    dbs.getDbFilesDataByUserUid(userRecord.uid)
+        .then((data) => {
         // services.getDbFilesDataByUserUid(userRecord.uid);
-        return res.render('videos', {
-          navKey: 'videos',
-          user: userRecord,
-          files: data,
+          return res.render('videos', {
+            navKey: 'videos',
+            user: userRecord,
+            files: data,
+          });
         });
-      });
   });
 });
 
@@ -170,7 +134,7 @@ app.post('/upload', multer.single('file'), (req, res) => {
   checkUserClaims(req, res, (userRecord) => {
     const file = req.file;
     if (file) {
-      uploadFile(userRecord, file).then((success) => {
+      fss.uploadFile(userRecord, file).then((success) => {
         res.status(200).send({
           status: 'success',
         });
@@ -200,19 +164,19 @@ app.post('/sessionLogin', function(req, res) {
     }
     throw new Error('UNAUTHORIZED REQUEST!');
   })
-    .then(function(sessionCookie) {
+      .then(function(sessionCookie) {
       // Note httpOnly cookie will not be accessible from javascript.
       // secure flag should be set to true in production.
-      const options = {
-        maxAge: expiresIn,
-        httpOnly: true, secure: false, /** to test in localhost */
-      };
-      res.cookie('session', sessionCookie, options);
-      res.end(JSON.stringify({status: 'success'}));
-    })
-    .catch(function(error) {
-      res.status(401).send('UNAUTHORIZED REQUEST!');
-    });
+        const options = {
+          maxAge: expiresIn,
+          httpOnly: true, secure: false, /** to test in localhost */
+        };
+        res.cookie('session', sessionCookie, options);
+        res.end(JSON.stringify({status: 'success'}));
+      })
+      .catch(function(error) {
+        res.status(401).send('UNAUTHORIZED REQUEST!');
+      });
 });
 
 /** User signout endpoint. */
@@ -223,17 +187,17 @@ app.get('/logout', function(req, res) {
   // Revoke session too. Note this will revoke all user sessions.
   if (sessionCookie) {
     admin.auth().verifySessionCookie(sessionCookie, true)
-      .then(function(decodedClaims) {
-        return admin.auth().revokeRefreshTokens(decodedClaims.sub);
-      })
-      .then(function() {
+        .then(function(decodedClaims) {
+          return admin.auth().revokeRefreshTokens(decodedClaims.sub);
+        })
+        .then(function() {
         // Redirect to login page on success.
-        res.redirect('/');
-      })
-      .catch(function() {
+          res.redirect('/');
+        })
+        .catch(function() {
         // Redirect to login page on error.
-        res.redirect('/');
-      });
+          res.redirect('/');
+        });
   } else {
     // Redirect to login page when no session cookie available.
     res.redirect('/');
@@ -247,17 +211,17 @@ app.get('/delete', function(req, res) {
   if (sessionCookie) {
     // Verify user and then delete the user.
     admin.auth().verifySessionCookie(sessionCookie, true)
-      .then(function(decodedClaims) {
-        return admin.auth().deleteUser(decodedClaims.sub);
-      })
-      .then(function() {
+        .then(function(decodedClaims) {
+          return admin.auth().deleteUser(decodedClaims.sub);
+        })
+        .then(function() {
         // Redirect to login page on success.
-        res.redirect('/');
-      })
-      .catch(function() {
+          res.redirect('/');
+        })
+        .catch(function() {
         // Redirect to login page on error.
-        res.redirect('/');
-      });
+          res.redirect('/');
+        });
   } else {
     // Redirect to login page when no session cookie available.
     res.redirect('/');
@@ -274,37 +238,49 @@ app.get('/about', (req, res) => {
   });
 });
 
+/** Wrapper function for security check
+ * @param {request} req request
+ * @param {response} res response
+ * @param {function} fnc callback function
+ */
 function checkUserClaims(req, res, fnc) {
   const sessionCookie = req.cookies.session || '';
   admin.auth().verifySessionCookie(sessionCookie, true /** check if revoked. */)
-    .then((decodedClaims) => {
+      .then((decodedClaims) => {
       // Serve content for signed in user.
-      admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
-        fnc(userRecord);
+        admin.auth().getUser(decodedClaims.sub).then((userRecord) => {
+          fnc(userRecord);
+        });
+      }).catch(function(error) {
+        res.redirect('/');
       });
-    }).catch(function(error) {
-    res.redirect('/');
-  });
 }
 
 app.get('/delete_video', function(req, res) {
   checkUserClaims(req, res, (userData) => {
+    dbs.deleteVideoRecord(userData.uid, req.query.recordKey);
+    /*
+    dbs.getVideoRecord(userData.uid, req.query.recordKey)
+      .then((videoRec) => {
+        fss.removeFile(videoRec.pathVideo);
+        }
+      );
+
+
     const path = `videos/${userData.uid}/${req.query.recordKey}`;
     let dbRef = admin.database().ref(path);
     dbRef.once('value')
       .then( (snapshot) => {
-        console.log(snapshot.val());
-        let pathVideo = (snapshot.val() && snapshot.val().path_video);
-        // let filesToDelete = [ (snapshot.val() && snapshot.val().path_video), (snapshot.val() && snapshot.val().path_thumbnail) ];
-        console.log("pathVideo:" + snapshot.val() && snapshot.val().path_video);
+        const pathVideo = (snapshot.val() && snapshot.val().path_video);
+        // let filesToDelete = [ (snapshot.val() && snapshot.val().path_video),
+        (snapshot.val() && snapshot.val().path_thumbnail) ];
         admin.storage().bucket().deleteFiles({ prefix: pathVideo})
           .then( () => {
-            console.log(`files are deleted.`);
+            console.log(`files ${pathVideo} are deleted.`);
         });
-
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
     dbRef.remove()
       .then((data) => {
@@ -314,6 +290,7 @@ app.get('/delete_video', function(req, res) {
       .catch((error) => {
         console.error("problems with db record delete.", error);
       });
+     */
   });
 });
 
