@@ -9,7 +9,7 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpeg_static = require('ffmpeg-static');
+const ffmpegStatic = require('ffmpeg-static');
 
 // Max height and width of the thumbnail in pixels.
 const THUMB_SIZE = '320x240';
@@ -19,158 +19,141 @@ const THUMB_EXT = '.png';
 
 admin.initializeApp();
 
-// Makes an ffmpeg command return a promise.
+/**
+ *  Function to promosify command
+ * @param {command} command
+ * @return {Promise<any>} result
+ */
 function promisifyCommand(command) {
   return new Promise((resolve, reject) => {
     command.on('end', resolve).on('error', reject).run();
   });
 }
 
-/*Remove files when corresponding database record is deleted. */
+/* Remove files when corresponding database record is deleted. */
 
-exports.sanitizeStorage = functions.database.ref('/videos/{userId}/{clipId}').onDelete(event => {
+exports.sanitizeStorage = functions.database
+    .ref('/videos/{userId}/{clipId}/uploaded')
+    .onDelete((event) => {
+      const filePattern = path.parse(event.val().path_video).name;
+      const bucket = admin.storage().bucket();
+      console.log(`file pattern: ${filePattern}`);
+      bucket.deleteFiles({prefix: filePattern} )
+          .then( () => {
+            return console.log(`files with prefix ${filePattern} are deleted.`);
+          })
+          .catch( (error) => {
+            console.log('error', error);
+          });
 
-  /*
-  console.log(event);
-  let videoId = event.data.path_thumbnail;
-  let userId = event.data.ref.parent.key;
-  const filesToDelete = [ event.data.path_thumbnail, event.data.path_video ];
-
-  if (typeof videoId === 'undefined' || typeof userId === 'undefined') {
-    console.error('Error while sanitize photo, user uid or photo uid are missing');
-    return;
-  }
-   */
-
-  console.log(event);
-  console.log(`${event.val().path_video}`);
-
-  const filePattern = path.parse(event.val().path_video).name;
-  const bucket = admin.storage().bucket();
-
-/*
-  let ref = admin.database().ref(event.val().path_video);
-  ref.remove()
-    .then(() => {
-      console.log("file is deleted");
-      return;
-    })
-    .catch( (error) => {
-      console.error(error);
-    })
-*/
-  console.log(`file pattern: ${filePattern}`);
-
-  bucket.deleteFiles({ prefix: filePattern } )
-    .then( () => {
-      return console.log(`files with prefix ${filePattern} are deleted.`);
-    })
-    .catch( (error) => {
-      console.log("error", error);
-    })
-
-  return console.log("function sanitizeStorage finished.");
-
-});
+      return console.log('function sanitizeStorage finished.');
+    });
 
 
 /**
- * when video is uploaded in the storage bucket, the thumbnail is generated accordingly
- * once the thumbnail is generated, its URL is saved in the Firestore Realtime DB
+ * when video is uploaded in the storage bucket,
+ * the thumbnail is generated accordingly
+ * once the thumbnail is generated, its URL is saved
+ * in the Firestore Realtime DB
+*/
+exports.generateThumbnail = functions.storage.object()
+    .onFinalize(async (object) => {
+      // File and directory paths.
+      const filePath = object.name;
+      const fileDir = path.dirname(filePath);
+      const fileName = path.basename(filePath);
+      const thumbFilePath = path.normalize(
+          path.join(fileDir, path.parse(fileName).name
+            + THUMB_POSTFIX + THUMB_EXT));
+      const tempLocalFile = path.join(os.tmpdir(), filePath);
+      const tempLocalDir = path.dirname(tempLocalFile);
+      const tmpLocTnFile = path.join(os.tmpdir(), thumbFilePath);
 
-
-exports.deleteFunction = functions.database.ref('/videos')
-  .onDelete((snapshot, context) => {
-    var del_id = snapshot.key;
-    console.log("deleted ID %s", del_id); // logs "deleted ID 1234", etc.
-    console.log(snapshot.val()); // logs the deleted data, no need for this
-    console.log(context); // logs the event context
-  });
- */
-
-exports.generateThumbnail = functions.storage.object().onFinalize(async (object) => {
-  // File and directory paths.
-  const filePath = object.name;
-  const fileDir = path.dirname(filePath);
-  const fileName = path.basename(filePath);
-  const thumbFilePath = path.normalize(path.join(fileDir, path.parse(fileName).name + THUMB_POSTFIX + THUMB_EXT));
-  const tempLocalFile = path.join(os.tmpdir(), filePath);
-  const tempLocalDir = path.dirname(tempLocalFile);
-  const tempLocalThumbFile = path.join(os.tmpdir(), thumbFilePath);
-
-  // Exit if this is triggered on a file that is not an image.
-  /*
+      // Exit if this is triggered on a file that is not an image.
+      /*
   if (!contentType.startsWith('image/')) {
     return console.log('This is not an image.');
   }
   */
 
-  // Exit if the image is already a thumbnail.
-  if (fileName.endsWith(THUMB_EXT)) {
-    return console.log('Already a Thumbnail.');
-  }
+      // Exit if the image is already a thumbnail.
+      if (fileName.endsWith(THUMB_EXT)) {
+        return console.log('Already a Thumbnail.');
+      }
 
-  // Cloud Storage files.
-  const bucket = admin.storage().bucket(object.bucket);
-  const file = bucket.file(filePath);
-  const thumbFile = bucket.file(thumbFilePath);
-  const metadata = {
-    contentType: 'image/png',
-    // To enable Client-side caching you can set the Cache-Control headers here. Uncomment below.
-    // 'Cache-Control': 'public,max-age=3600',
-  };
+      // Cloud Storage files.
+      const bucket = admin.storage().bucket(object.bucket);
+      const file = bucket.file(filePath);
+      const thumbFile = bucket.file(thumbFilePath);
+      const metadata = {
+        contentType: 'image/png',
+        // To enable Client-side caching you can set the
+        // Cache-Control headers here. Uncomment below.
+        // 'Cache-Control': 'public,max-age=3600',
+      };
 
-  // Create the temp directory where the storage file will be downloaded.
-  await mkdirp(tempLocalDir);
-  // Download file from bucket.
-  await file.download({destination: tempLocalFile});
-  console.log('The file has been downloaded to', tempLocalFile);
+      // Create the temp directory where the storage file will be downloaded.
+      await mkdirp(tempLocalDir);
+      // Download file from bucket.
+      await file.download({destination: tempLocalFile});
+      console.log('The file has been downloaded to', tempLocalFile);
 
-  // Creating the Thumbnail locally
-//  await spawn('ffmpeg', [tempLocalFile, '-thumbnail', `${THUMB_MAX_WIDTH}x${THUMB_MAX_HEIGHT}>`, tempLocalThumbFile], {capture: ['stdout', 'stderr']});
+      const command = ffmpeg(tempLocalFile)
+          .on('filenames', (filenames) => {
+            console.log('will generate ' + filenames.join(', ') +
+              ' in the ' + tempLocalDir + 'folder');
+          })
+          .setFfmpegPath(ffmpegStatic.path)
+          .outputOptions(
+              ['-f image2',
+                '-vframes 1',
+                '-vcodec png',
+                '-f rawvideo',
+                `-s ${THUMB_SIZE}`,
+                '-ss 00:00:05']
+          ).output(tmpLocTnFile);
 
+      await promisifyCommand(command);
 
-  let command = ffmpeg(tempLocalFile)
-    .on('filenames', filenames => {
-      console.log(`will generate ${filenames.join(', ')} in the ${tempLocalDir} folder`)
-    })
-    .setFfmpegPath(ffmpeg_static.path)
-    .outputOptions(['-f image2', '-vframes 1', '-vcodec png', '-f rawvideo', `-s ${THUMB_SIZE}`, '-ss 00:00:05'])
-    .output(tempLocalThumbFile);
+      console.log(`local tmp file: ${tmpLocTnFile.length}, ${tmpLocTnFile}`);
 
-  await promisifyCommand(command);
+      // Uploading the Thumbnail.
+      await bucket.upload(tmpLocTnFile, {
+        destination: thumbFilePath,
+        metadata: metadata});
 
-  console.log(`generated local file: ${tempLocalThumbFile.length}, ${tempLocalThumbFile}`);
+      fs.unlinkSync(tempLocalFile);
+      fs.unlinkSync(tmpLocTnFile);
+      // Get the Signed URLs for the thumbnail and original image.
+      const config = {
+        action: 'read',
+        expires: '03-01-2500',
+      };
 
-  // Uploading the Thumbnail.
-  await bucket.upload(tempLocalThumbFile, {destination: thumbFilePath, metadata: metadata});
-  fs.unlinkSync(tempLocalFile);
-  fs.unlinkSync(tempLocalThumbFile);
-  // Get the Signed URLs for the thumbnail and original image.
-  const config = {
-    action: 'read',
-    expires: '03-01-2500',
-  };
+      const results = await Promise.all([
+        thumbFile.getSignedUrl(config),
+        file.getSignedUrl(config),
+      ]);
+      console.log('Got Signed URLs.');
+      const thumbResult = results[0];
+      const originalResult = results[1];
+      const thumbFileUrl = thumbResult[0];
+      const fileUrl = originalResult[0];
 
-  const results = await Promise.all([
-    thumbFile.getSignedUrl(config),
-    file.getSignedUrl(config),
-  ]);
-  console.log('Got Signed URLs.');
-  const thumbResult = results[0];
-  const originalResult = results[1];
-  const thumbFileUrl = thumbResult[0];
-  const fileUrl = originalResult[0];
+      // Add the URLs to the Database
 
-  // Add the URLs to the Database
+      const newRef = admin.database().ref(
+          `videos/${object.metadata['uploadedBy']}/uploaded`);
+      await newRef.push({
+        url_video: fileUrl,
+        url_thumbnail: thumbFileUrl,
+        path_video: filePath,
+        path_thumbnail: thumbFilePath,
+      });
+      // await newRef.set({ id: newRef.key });
 
-  let newRef = admin.database().ref(`videos/${object.metadata['uploadedBy']}`);
-  await newRef.push({url_video: fileUrl, url_thumbnail: thumbFileUrl, path_video: filePath, path_thumbnail: thumbFilePath});
-  // await newRef.set({ id: newRef.key });
-
-  return console.log('Thumbnail URLs saved to database.');
-
-});
+      return console.log('Thumbnail URLs saved to database.');
+    });
 
 
 /*

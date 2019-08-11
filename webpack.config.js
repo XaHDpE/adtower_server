@@ -1,4 +1,4 @@
-var webpack = require('webpack');
+const webpack = require('webpack');
 
 module.exports = {
   entry: './script.js',
@@ -8,7 +8,7 @@ module.exports = {
     path: __dirname,
   },
   optimization: {
-    minimize: true
-  }
-}
+    minimize: true,
+  },
+};
 

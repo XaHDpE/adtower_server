@@ -1,80 +1,63 @@
 // const config = require('/config/applicationConfig.js');
 $(
-  () => {
-
-    Sortable.create(avaialableVidsList, {
+    () => {
+      Sortable.create(avaialableVidsList, {
         group: {
           name: 'sortable_group',
           pull: 'clone',
         },
+        // draggable: '.img-tn-av',
         drop: false,
         animation: 100,
+        dataIdAttr: 'data-id',
       });
 
-    Sortable.create(activeVidsList, {
+      const acList = Sortable.create(activeVidsList, {
         group: 'sortable_group',
         dataIdAttr: 'data-id',
         animation: 100,
-      });
-
-    Sortable.create(testList, {
-        group: 'sortable_group',
-        dataIdAttr: 'data-id',
-        animation: 100,
+        // draggable: '.img-tn-av',
         store: {
           get: function(sortable) {
-            var order = localStorage.getItem(sortable.options.group.name);
+            const order = localStorage.getItem(sortable.options.group.name);
             return order ? order.split('|') : [];
           },
 
           set: function(sortable) {
-            var order = sortable.toArray();
-            console.log('order:' + order);
+            const order = sortable.toArray();
+            // console.log('order:' + order);
             localStorage.setItem(sortable.options.group.name, order.join('|'));
           },
-        }
+        },
       });
 
-  },
+      $('#avdSave').click( () => {
+        const orderList = acList.toArray(); // use instance
+        $.ajax({
+          url: 'save_playlist',
+          data: {
+            videos: JSON.stringify(orderList),
+          },
+          success: (resp) => {
+            console.log(resp);
+          },
+        });
+      });
+    },
 );
 // Simple list
 
-/*
-    Carousel
-*/
-$('#carousel-example').on('slide.bs.carousel', function (e) {
-  /*
-      CC 2.0 License Iatek LLC 2018 - Attribution required
-  */
-  var $e = $(e.relatedTarget);
-  var idx = $e.index();
-  var itemsPerSlide = 5;
-  var totalItems = $('.carousel-item').length;
-
-  if (idx >= totalItems-(itemsPerSlide-1)) {
-    var it = itemsPerSlide - (totalItems - idx);
-    for (var i=0; i<it; i++) {
-      // append slides to end
-      if (e.direction=="left") {
-        $('.carousel-item').eq(i).appendTo('.carousel-inner');
-      }
-      else {
-        $('.carousel-item').eq(0).appendTo('.carousel-inner');
-      }
-    }
-  }
-});
-
-$('.close-div').click(function(){
+$('.close-div').click(function() {
+  // eslint-disable-next-line no-invalid-this
   const pObj = $(this).parent();
   const recId = pObj.attr('id');
-  console.log("parentID:" + recId);
+  console.log('parentID:' + recId);
   $.ajax({
     url: `delete_video?recordKey=${recId}`,
     // data: {},
     success: () => {
-      console.log("deleted record: " + recId);
-    }
+      console.log('deleted record: ' + recId);
+    },
   });
   pObj.remove();
 });

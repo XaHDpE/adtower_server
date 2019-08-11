@@ -42,7 +42,7 @@ const $ = jQuery = require('jquery')(window);
  */
 function attachCsrfToken(url, cookie, value) {
   return function(req, res, next) {
-    if (req.url == url) {
+    if (req.url === url) {
       res.cookie(cookie, value);
     }
     next();
@@ -56,13 +56,14 @@ function attachCsrfToken(url, cookie, value) {
  */
 function checkIfSignedIn(url) {
   return function(req, res, next) {
-    if (req.url == url) {
+    if (req.url === url) {
       const sessionCookie = req.cookies.session || '';
       // User already logged in. Redirect to Videos page.
       admin.auth().verifySessionCookie(sessionCookie)
           .then(function(decodedClaims) {
             res.redirect('/videos');
           }).catch(function(error) {
+            console.error(error);
             next();
           });
     } else {
@@ -109,6 +110,7 @@ app.get('/library', (req, res) => {
               });
         });
       }).catch((error) => {
+        console.error(error);
         res.redirect('/');
       });
 });
@@ -134,7 +136,7 @@ app.post('/upload', multer.single('file'), (req, res) => {
   checkUserClaims(req, res, (userRecord) => {
     const file = req.file;
     if (file) {
-      fss.uploadFile(userRecord, file).then((success) => {
+      fss.uploadFile(userRecord, file).then(() => {
         res.status(200).send({
           status: 'success',
         });
@@ -175,6 +177,7 @@ app.post('/sessionLogin', function(req, res) {
         res.end(JSON.stringify({status: 'success'}));
       })
       .catch(function(error) {
+        console.error(error);
         res.status(401).send('UNAUTHORIZED REQUEST!');
       });
 });
@@ -252,48 +255,24 @@ function checkUserClaims(req, res, fnc) {
           fnc(userRecord);
         });
       }).catch(function(error) {
+        console.error(error);
         res.redirect('/');
       });
 }
 
-app.get('/delete_video', function(req, res) {
+app.get('/delete_video', (req, res) => {
   checkUserClaims(req, res, (userData) => {
     dbs.deleteVideoRecord(userData.uid, req.query.recordKey);
-    /*
-    dbs.getVideoRecord(userData.uid, req.query.recordKey)
-      .then((videoRec) => {
-        fss.removeFile(videoRec.pathVideo);
-        }
-      );
-
-
-    const path = `videos/${userData.uid}/${req.query.recordKey}`;
-    let dbRef = admin.database().ref(path);
-    dbRef.once('value')
-      .then( (snapshot) => {
-        const pathVideo = (snapshot.val() && snapshot.val().path_video);
-        // let filesToDelete = [ (snapshot.val() && snapshot.val().path_video),
-        (snapshot.val() && snapshot.val().path_thumbnail) ];
-        admin.storage().bucket().deleteFiles({ prefix: pathVideo})
-          .then( () => {
-            console.log(`files ${pathVideo} are deleted.`);
-        });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-    dbRef.remove()
-      .then((data) => {
-        console.log(`db record via ${path} is deleted`);
-        }
-      )
-      .catch((error) => {
-        console.error("problems with db record delete.", error);
-      });
-     */
   });
 });
 
+app.get('/save_playlist', (req, res) => {
+  checkUserClaims(req, res, (userData) => {
+    const playlist = {...JSON.parse(req.query.videos)};
+    const playlistKey = dbs.newPlaylist(userData.uid, 'playlist', playlist);
+    res.status(200).send(playlistKey);
+  });
+});
 
 // Start http server and listen to port 3000.
 
