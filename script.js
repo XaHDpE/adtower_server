@@ -1,3 +1,4 @@
+var firebase = require('firebase');
 const firebaseui = require('firebaseui');
 const config = require('./config/applicationConfig.js');
 const $ = require('jquery');

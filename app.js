@@ -1,10 +1,10 @@
-const express = require('express');
+express = require('express');
 const cookieParser = require('cookie-parser');
 const app = express();
 const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
-const dbs = require('./public/js/db_services');
-const fss = require('./public/js/fs_services');
+const dbs = require('./server_funcs/db_services');
+const fss = require('./server_funcs/fs_services');
 
 // Initialize Admin SDK.
 admin.initializeApp({
@@ -58,6 +58,7 @@ function checkIfSignedIn(url) {
   return function(req, res, next) {
     if (req.url === url) {
       const sessionCookie = req.cookies.session || '';
+      console.log('sessionCookie: ' + sessionCookie);
       // User already logged in. Redirect to Videos page.
       admin.auth().verifySessionCookie(sessionCookie)
           .then(function(decodedClaims) {
@@ -186,7 +187,7 @@ app.post('/sessionLogin', function(req, res) {
 app.get('/logout', function(req, res) {
   // Clear cookie.
   const sessionCookie = req.cookies.session || '';
-  res.clearCookie('session');
+  res.clearCookie(`-'${req.cookies.session}'-`);
   // Revoke session too. Note this will revoke all user sessions.
   if (sessionCookie) {
     admin.auth().verifySessionCookie(sessionCookie, true)
